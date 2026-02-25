@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
 use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Symbol, Vec,
 };
@@ -233,7 +234,7 @@ impl Insurance {
     }
     pub fn pause(env: Env, caller: Address) {
         caller.require_auth();
-        let admin = Self::get_pause_admin(&env).expect("No pause admin set");
+        let admin = Self::get_pause_admin(&env).unwrap_or_else(|| panic!("No pause admin set"));
         if admin != caller {
             panic!("Unauthorized");
         }
@@ -245,7 +246,7 @@ impl Insurance {
     }
     pub fn unpause(env: Env, caller: Address) {
         caller.require_auth();
-        let admin = Self::get_pause_admin(&env).expect("No pause admin set");
+        let admin = Self::get_pause_admin(&env).unwrap_or_else(|| panic!("No pause admin set"));
         if admin != caller {
             panic!("Unauthorized");
         }
@@ -264,7 +265,7 @@ impl Insurance {
     }
     pub fn pause_function(env: Env, caller: Address, func: Symbol) {
         caller.require_auth();
-        let admin = Self::get_pause_admin(&env).expect("No pause admin set");
+        let admin = Self::get_pause_admin(&env).unwrap_or_else(|| panic!("No pause admin set"));
         if admin != caller {
             panic!("Unauthorized");
         }
@@ -280,7 +281,7 @@ impl Insurance {
     }
     pub fn unpause_function(env: Env, caller: Address, func: Symbol) {
         caller.require_auth();
-        let admin = Self::get_pause_admin(&env).expect("No pause admin set");
+        let admin = Self::get_pause_admin(&env).unwrap_or_else(|| panic!("No pause admin set"));
         if admin != caller {
             panic!("Unauthorized");
         }
@@ -337,7 +338,10 @@ impl Insurance {
     }
     pub fn set_version(env: Env, caller: Address, new_version: u32) {
         caller.require_auth();
-        let admin = Self::get_upgrade_admin(&env).expect("No upgrade admin set");
+        let admin = match Self::get_upgrade_admin(&env) {
+            Some(a) => a,
+            None => panic!("No upgrade admin set"),
+        };
         if admin != caller {
             panic!("Unauthorized");
         }
@@ -547,7 +551,7 @@ impl Insurance {
         let current_time = env.ledger().timestamp();
         let mut paid_count = 0u32;
         for id in policy_ids.iter() {
-            let mut policy = policies.get(id).unwrap();
+            let mut policy = policies.get(id).unwrap_or_else(|| panic!("Policy not found"));
             policy.next_payment_date = current_time + (30 * 86400);
             let event = PremiumPaidEvent {
                 policy_id: id,
@@ -713,7 +717,7 @@ impl Insurance {
             .get(&symbol_short!("POLICIES"))
             .unwrap_or_else(|| Map::new(&env));
 
-        let mut policy = policies.get(policy_id).expect("Policy not found");
+        let mut policy = policies.get(policy_id).unwrap_or_else(|| panic!("Policy not found"));
 
         if policy.owner != caller {
             panic!("Only the policy owner can deactivate this policy");
@@ -794,7 +798,7 @@ impl Insurance {
             .get(&symbol_short!("POLICIES"))
             .unwrap_or_else(|| Map::new(&env));
 
-        let mut policy = policies.get(policy_id).expect("Policy not found");
+        let mut policy = policies.get(policy_id).unwrap_or_else(|| panic!("Policy not found"));
 
         if policy.owner != owner {
             panic!("Only the policy owner can create schedules");
@@ -879,7 +883,7 @@ impl Insurance {
             .get(&symbol_short!("PREM_SCH"))
             .unwrap_or_else(|| Map::new(&env));
 
-        let mut schedule = schedules.get(schedule_id).expect("Schedule not found");
+        let mut schedule = schedules.get(schedule_id).unwrap_or_else(|| panic!("Schedule not found"));
 
         if schedule.owner != caller {
             panic!("Only the schedule owner can modify it");
@@ -913,7 +917,7 @@ impl Insurance {
             .get(&symbol_short!("PREM_SCH"))
             .unwrap_or_else(|| Map::new(&env));
 
-        let mut schedule = schedules.get(schedule_id).expect("Schedule not found");
+        let mut schedule = schedules.get(schedule_id).unwrap_or_else(|| panic!("Schedule not found"));
 
         if schedule.owner != caller {
             panic!("Only the schedule owner can cancel it");

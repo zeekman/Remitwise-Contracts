@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, token::TokenClient, Address,
     Env, Map, Symbol, Vec,
@@ -299,7 +300,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("MEMBERS"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
 
         if members.get(member_address.clone()).is_some() {
             return Err(Error::InvalidRole);
@@ -339,7 +340,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("MEMBERS"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
 
         members.get(member_address)
     }
@@ -364,7 +365,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("MEMBERS"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
 
         let mut record = members
             .get(member_address.clone())
@@ -445,7 +446,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("MEMBERS"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
 
         if !Self::is_owner_or_admin_in_members(&members, &caller) {
             panic!("Only Owner or Admin can configure multi-sig");
@@ -507,7 +508,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&config_key)
-            .expect("Multi-sig config not found");
+            .unwrap_or_else(|| panic!("Multi-sig config not found"));
 
         let requires_multisig = match (&tx_type, &data) {
             (TransactionType::RegularWithdrawal, TransactionData::Withdrawal(_, _, amount)) => {
@@ -555,7 +556,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("PEND_TXS"))
-            .expect("Pending transactions map not initialized");
+            .unwrap_or_else(|| panic!("Pending transactions map not initialized"));
 
         pending_txs.set(tx_id, pending_tx);
         env.storage()
@@ -580,9 +581,9 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("PEND_TXS"))
-            .expect("Pending transactions map not initialized");
+            .unwrap_or_else(|| panic!("Pending transactions map not initialized"));
 
-        let mut pending_tx = pending_txs.get(tx_id).expect("Transaction not found");
+        let mut pending_tx = pending_txs.get(tx_id).unwrap_or_else(|| panic!("Transaction not found"));
 
         let current_time = env.ledger().timestamp();
         if current_time > pending_tx.expires_at {
@@ -599,7 +600,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&Self::get_config_key(pending_tx.tx_type))
-            .expect("Multi-sig config not found");
+            .unwrap_or_else(|| panic!("Multi-sig config not found"));
 
         let mut is_authorized = false;
         for authorized_signer in config.signers.iter() {
@@ -634,7 +635,7 @@ impl FamilyWallet {
                     .storage()
                     .instance()
                     .get(&symbol_short!("EXEC_TXS"))
-                    .expect("Executed transactions map not initialized");
+                    .unwrap_or_else(|| panic!("Executed transactions map not initialized"));
 
                 executed_txs.set(tx_id, true);
                 env.storage()
@@ -668,7 +669,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&Self::get_config_key(TransactionType::LargeWithdrawal))
-            .expect("Multi-sig config not found");
+            .unwrap_or_else(|| panic!("Multi-sig config not found"));
 
         let tx_type = if amount > config.spending_limit {
             TransactionType::LargeWithdrawal
@@ -836,7 +837,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("MEMBERS"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
 
         let timestamp = env.ledger().timestamp();
         members.set(
@@ -865,7 +866,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("OWNER"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
 
         if caller != owner {
             panic!("Only Owner can remove family members");
@@ -880,7 +881,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("MEMBERS"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
 
         members.remove(member.clone());
         env.storage()
@@ -896,7 +897,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("PEND_TXS"))
-            .expect("Pending transactions map not initialized");
+            .unwrap_or_else(|| panic!("Pending transactions map not initialized"));
 
         pending_txs.get(tx_id)
     }
@@ -910,7 +911,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("MEMBERS"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
 
         members.get(member)
     }
@@ -919,7 +920,7 @@ impl FamilyWallet {
         env.storage()
             .instance()
             .get(&symbol_short!("OWNER"))
-            .expect("Wallet not initialized")
+            .unwrap_or_else(|| panic!("Wallet not initialized"))
     }
 
     pub fn get_emergency_config(env: Env) -> Option<EmergencyConfig> {
@@ -1117,7 +1118,7 @@ impl FamilyWallet {
             env.storage()
                 .instance()
                 .get(&symbol_short!("OWNER"))
-                .expect("Wallet not initialized")
+                .unwrap_or_else(|| panic!("Wallet not initialized"))
         });
         if admin != caller {
             panic!("Only pause admin can pause");
@@ -1136,7 +1137,7 @@ impl FamilyWallet {
             env.storage()
                 .instance()
                 .get(&symbol_short!("OWNER"))
-                .expect("Wallet not initialized")
+                .unwrap_or_else(|| panic!("Wallet not initialized"))
         });
         if admin != caller {
             panic!("Only pause admin can unpause");
@@ -1188,7 +1189,7 @@ impl FamilyWallet {
             env.storage()
                 .instance()
                 .get(&symbol_short!("OWNER"))
-                .expect("Wallet not initialized")
+                .unwrap_or_else(|| panic!("Wallet not initialized"))
         });
         if admin != caller {
             panic!("Only upgrade admin can set version");
@@ -1220,7 +1221,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("MEMBERS"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
         let timestamp = env.ledger().timestamp();
         let mut count = 0u32;
         for item in members.iter() {
@@ -1259,7 +1260,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("OWNER"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
         if caller != owner {
             panic!("Only Owner can remove members");
         }
@@ -1272,7 +1273,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("MEMBERS"))
-            .expect("Wallet not initialized");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
         let mut count = 0u32;
         for addr in addresses.iter() {
             if addr.clone() == owner {
@@ -1328,7 +1329,7 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("EM_CONF"))
-            .expect("Emergency config not set");
+            .unwrap_or_else(|| panic!("Emergency config not set"));
 
         if amount > config.max_amount {
             panic!("Emergency amount exceeds maximum allowed");
@@ -1406,7 +1407,7 @@ impl FamilyWallet {
                     .storage()
                     .instance()
                     .get(&symbol_short!("MEMBERS"))
-                    .expect("Wallet not initialized");
+                    .unwrap_or_else(|| panic!("Wallet not initialized"));
 
                 if let Some(mut member_data) = members.get(member.clone()) {
                     member_data.role = *new_role;
@@ -1507,8 +1508,8 @@ impl FamilyWallet {
             .storage()
             .instance()
             .get(&symbol_short!("MEMBERS"))
-            .expect("Wallet not initialized");
-        let member = members.get(caller.clone()).expect("Not a family member");
+            .unwrap_or_else(|| panic!("Wallet not initialized"));
+        let member = members.get(caller.clone()).unwrap_or_else(|| panic!("Not a family member"));
         if Self::role_has_expired(env, caller) {
             panic!("Role has expired");
         }
@@ -1541,7 +1542,7 @@ impl FamilyWallet {
             let mut v = Vec::new(env);
             let start = n - MAX_ACCESS_AUDIT_ENTRIES;
             for i in start..n {
-                v.push_back(entries.get(i).unwrap());
+                v.push_back(entries.get(i).unwrap_or_else(|| panic!("Item not found")));
             }
             entries = v;
         }

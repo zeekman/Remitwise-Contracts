@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
 
 mod events;
 use events::{EventCategory, EventPriority, RemitwiseEvents};
@@ -972,7 +973,7 @@ impl BillPayments {
     pub fn batch_pay_bills(env: Env, caller: Address, bill_ids: Vec<u32>) -> Result<u32, Error> {
         caller.require_auth();
         Self::require_not_paused(&env, pause_functions::PAY_BILL)?;
-        if bill_ids.len() > (MAX_BATCH_SIZE as usize).try_into().unwrap() {
+        if bill_ids.len() > (MAX_BATCH_SIZE as usize).try_into().unwrap_or(u32::MAX) {
             return Err(Error::BatchTooLarge);
         }
         let bills_map: Map<u32, Bill> = env
